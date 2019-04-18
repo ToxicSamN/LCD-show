@@ -5,7 +5,7 @@ usage(){
 	p_desc="Don't replace the current cmdline.txt file, only add to it"
 	h_desc="\t\tProvide usage information."
 	printf "Usage: \n  $0 [OPTIONS]\n\nOPTIONS:\n"
-	printf "  -n | --no-reboot)\t\t$n_desc\n  -p | --preserve-boot-cmdline\t$p_desc\n  -h | --help\t$h_desc\n\n\n"
+	printf "  -n | --no-reboot\t\t$n_desc\n  -p | --preserve-boot-cmdline\t$p_desc\n  -h | --help\t$h_desc\n\n\n"
 	exit 1
 }
 NO_REBOOT="FALSE"
