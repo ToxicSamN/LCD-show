@@ -79,3 +79,4 @@ fi
 if [ "$NO_REBOOT" = "FALSE" ]; then
 	echo reboot
 	sudo reboot
+fi
