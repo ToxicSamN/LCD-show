@@ -1,0 +1,81 @@
+#!/bin/bash
+
+usage(){
+	n_desc="Disable Automatic Reboot after installation"
+	p_desc="Don't replace the current cmdline.txt file, only add to it"
+	h_desc="\t\tprovide usage information."
+	printf "Usage: \n  $0 [OPTIONS]\n\nOPTIONS:\n"
+	printf "  -n | --no-reboot)\t$n_desc\n  -p | --preserve-boot-cmdline\t$p_desc\n  -h | --help\t$h_desc\n\n\n"
+	exit 1
+}
+NO_REBOOT="FALSE"
+PRESERVE_BOOT="FALSE"
+
+while : 
+do
+	case "$1" in 
+		-n | --no-reboot)	
+			NO_REBOOT="TRUE"
+			;;
+		-p | --preserve-boot-cmdline)	
+			PRESERVE_BOOT="TRUE"
+			;;
+		-h | --help)	
+			shift
+			usage
+			;;
+		--) # end of all options
+			shift
+			break
+			;;
+		-*) # unknown option
+			echo "Error: Unknown Parameter: $1" >&2
+			exit 99
+			;;
+		* )	# no more options
+			break
+			;;
+	esac
+	shift
+done
+
+sudo rm -rf /etc/X11/xorg.conf.d/40-libinput.conf
+sudo mkdir /etc/X11/xorg.conf.d
+sudo cp ./usr/tft35a-overlay.dtb /boot/overlays/
+sudo cp ./usr/tft35a-overlay.dtb /boot/overlays/tft35a.dtbo
+sudo cp -rf ./usr/99-calibration.conf-35  /etc/X11/xorg.conf.d/99-calibration.conf
+sudo cp -rf ./usr/99-fbturbo.conf  /usr/share/X11/xorg.conf.d/
+if [ "$PRESERVE_BOOT" = "TRUE" ]; then
+	sudo cp /boot/cmdline.txt /boot/cmdline.txt.org
+	echo "dwc_otg.lpm_enable=0 console=tty1 console=ttyAMA0,115200 root=PARTUUID=f6ad649b-02 rootfstype=ext4 elevator=deadline fsck.repair=yes rootwait quiet fbcon=map:10 fbcon=font:ProFont6x11 logo.nologo" | sudo tee /boot/cmdline.txt
+else
+	if [ -b /dev/mmcblk0p7 ]; then
+		sudo cp ./usr/cmdline.txt-noobs /boot/cmdline.txt
+	else
+		sudo cp ./usr/cmdline.txt /boot/
+	fi
+fi
+sudo cp ./usr/inittab /etc/
+sudo cp ./boot/config-35.txt /boot/config.txt
+nodeplatform=`uname -n`
+kernel=`uname -r`
+version=`uname -v`
+if test "$nodeplatform" = "raspberrypi";then
+	echo "this is raspberrypi kernel"
+	version=${version%% *}
+	version=${version#*#}
+	echo $version
+	if test $version -lt 970;then
+		echo "reboot"
+	else
+		echo "need to update touch configuration"
+		sudo apt-get install xserver-xorg-input-evdev
+		sudo cp -rf /usr/share/X11/xorg.conf.d/10-evdev.conf /usr/share/X11/xorg.conf.d/45-evdev.conf
+	fi
+else
+	echo "this is not raspberrypi kernel, no need to update touch configure, reboot"	
+fi
+
+if [ "$NO_REBOOT" = "FALSE" ]; then
+	echo reboot
+	sudo reboot
